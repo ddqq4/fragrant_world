@@ -692,27 +692,20 @@ function getIconForCharacteristic($char) {
             </div>
         </div>
         <div class="footer-bottom">
-            <p>© 2024 Ароматный Мир. Все права защищены.</p>
+            <p>© 2025 Ароматный Мир. Все права защищены.</p>
         </div>
     </footer>
     
     <script>
-    // Функция для переключения вкладок
     function switchTab(tabName) {
-        // Скрываем все вкладки
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.remove('active');
         });
         
-        // Убираем активный класс со всех кнопок
         document.querySelectorAll('.detail-tab').forEach(button => {
             button.classList.remove('active');
         });
-        
-        // Показываем выбранную вкладку
         document.getElementById(tabName + '-tab').classList.add('active');
-        
-        // Активируем соответствующую кнопку
         event.target.classList.add('active');
     }
     </script>
