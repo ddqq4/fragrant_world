@@ -415,7 +415,7 @@ if ($step == 3 && isset($_SESSION['order_data'])) {
             </div>
         </div>
         <div class="footer-bottom">
-            <p>© 2024 Ароматный Мир. Все права защищены.</p>
+            <p>© 2025 Ароматный Мир. Все права защищены.</p>
         </div>
     </footer>
 </body>
