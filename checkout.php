@@ -14,6 +14,7 @@ $stmt = $pdo->prepare("SELECT email FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch();
 $user_email = $user['email'] ?? '';
+
 $stmt = $pdo->prepare("SELECT c.id, c.product_id, p.name, p.price, p.image_url, c.quantity 
                        FROM cart c 
                        JOIN products p ON c.product_id = p.id 
@@ -25,6 +26,7 @@ if (empty($cart_items) && $step < 3) {
     header("Location: cart.php");
     exit();
 }
+
 $subtotal = 0;
 foreach ($cart_items as $item) {
     $subtotal += $item['price'] * $item['quantity'];
@@ -68,10 +70,15 @@ if ($step == 3 && isset($_SESSION['order_data'])) {
     
     try {
         $pdo->beginTransaction();
+        $next_num_stmt = $pdo->query("SELECT IFNULL(MAX(CAST(SUBSTRING(order_number, 2) AS UNSIGNED)), 0) + 1 AS next_num FROM orders");
+        $next_num_row = $next_num_stmt->fetch();
+        $next_num = $next_num_row['next_num'];
+        $order_number = 'O' . str_pad($next_num, 6, '0', STR_PAD_LEFT);
         
-        $stmt = $pdo->prepare("INSERT INTO orders (user_id, customer_name, email, phone, address, comment, payment_method, subtotal, delivery_cost, total_amount, status) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+        $stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, customer_name, email, phone, address, comment, payment_method, subtotal, delivery_cost, total_amount, status) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
         $stmt->execute([
+            $order_number,
             $user_id, 
             $order_data['name'],
             $order_data['email'],
@@ -85,23 +92,18 @@ if ($step == 3 && isset($_SESSION['order_data'])) {
         ]);
         $order_id = $pdo->lastInsertId();
         
-        // Добавляем товары
         $stmt = $pdo->prepare("INSERT INTO order_items (order_id, product_id, product_name, price, quantity) 
                                VALUES (?, ?, ?, ?, ?)");
         foreach ($cart_items as $item) {
             $stmt->execute([$order_id, $item['product_id'], $item['name'], $item['price'], $item['quantity']]);
         }
         
-        // Очищаем корзину
         $stmt = $pdo->prepare("DELETE FROM cart WHERE user_id = ?");
         $stmt->execute([$user_id]);
         
         $pdo->commit();
         
         $order_success = true;
-        $order_number = 'O' . str_pad($order_id, 6, '0', STR_PAD_LEFT);
-        
-        // Очищаем данные заказа из сессии
         unset($_SESSION['order_data']);
         
     } catch (PDOException $e) {
@@ -212,7 +214,6 @@ if ($step == 3 && isset($_SESSION['order_data'])) {
         <div class="checkout-container">
             <h1>Оформление заказа</h1>
             
-            <!-- Шаги оформления -->
             <div class="checkout-steps">
                 <div class="step <?php echo $step >= 1 ? 'active' : 'inactive'; ?>">
                     <div class="step-circle">1</div>
@@ -329,7 +330,7 @@ if ($step == 3 && isset($_SESSION['order_data'])) {
                             <label>Способ оплаты *</label>
                             <select name="payment" required style="width: 100%; padding: 15px; border-radius: 12px; border: 1px solid rgba(139, 115, 85, 0.2);">
                                 <option value="cash">Наличные при получении</option>
-                                <option value="card">Карта онлайн</option>
+                                <option value="card">Картой при получении</option>
                                 <option value="sbp">СБП (Система быстрых платежей)</option>
                             </select>
                         </div>
